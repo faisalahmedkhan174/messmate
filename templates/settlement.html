@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Settlement - MessMate{% endblock %}
+{% block content %}
+<h4 class="mb-2">Settlement</h4>
+{% include "_month_selector.html" %}
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="post" action="{{ url_for('settlement.set_target') }}" class="row g-2 align-items-end">
+      <input type="hidden" name="year" value="{{ year }}">
+      <input type="hidden" name="month" value="{{ month }}">
+      <div class="col-auto">
+        <label class="form-label mb-0 small">Target Meal Rate (৳)</label>
+        <input type="number" step="0.01" min="0" class="form-control" name="target_meal_rate"
+               value="{{ mess.target_meal_rate if mess.target_meal_rate is not none else '' }}"
+               placeholder="Not set">
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-outline-primary" type="submit">Update Target</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<p class="fw-bold">Final Monthly Meal Rate: ৳{{ totals.final_rate }} &nbsp;|&nbsp; Total Meals: {{ totals.total_meals }} &nbsp;|&nbsp; Total বাজার: ৳{{ totals.total_bazar }}</p>
+
+<form class="mb-3" method="get">
+  <input type="hidden" name="year" value="{{ year }}">
+  <input type="hidden" name="month" value="{{ month }}">
+  <select name="status" class="form-select form-select-sm w-auto d-inline-block" onchange="this.form.submit()">
+    <option value="all" {% if status_filter=='all' %}selected{% endif %}>All</option>
+    <option value="due" {% if status_filter=='due' %}selected{% endif %}>Due</option>
+    <option value="refund" {% if status_filter=='refund' %}selected{% endif %}>Refund</option>
+    <option value="settled" {% if status_filter=='settled' %}selected{% endif %}>Settled</option>
+  </select>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <thead><tr><th>Member</th><th>B</th><th>L</th><th>D</th><th>Total Meals</th><th>Meal Cost</th><th>Deposit</th><th>Balance</th></tr></thead>
+    <tbody>
+    {% for row in settlement %}
+      <tr>
+        <td><a href="{{ url_for('members.details', member_id=row.member.id, year=year, month=month) }}">{{ row.member.name }}</a></td>
+        <td>{{ row.breakfast }}</td>
+        <td>{{ row.lunch }}</td>
+        <td>{{ row.dinner }}</td>
+        <td>{{ row.total_meals }}</td>
+        <td>৳{{ row.meal_cost }}</td>
+        <td>৳{{ row.total_deposit }}</td>
+        <td>
+          {% if row.status == 'refund' %}<span class="badge bg-success">🟢 Refund ৳{{ row.balance }}</span>
+          {% elif row.status == 'due' %}<span class="badge bg-danger">🔴 Due ৳{{ -row.balance }}</span>
+          {% else %}<span class="badge bg-secondary">✓ Settled</span>{% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="text-center text-muted">No members to settle.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

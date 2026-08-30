@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Deposits - MessMate{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+  <h4 class="mb-0">Deposits</h4>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDepositModal">+ Add Deposit</button>
+</div>
+{% include "_month_selector.html" %}
+<p class="fw-bold">Month Total: ৳{{ month_total }}</p>
+
+<div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <thead><tr><th>Date</th><th>Member</th><th>Amount</th><th>Note</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for e in entries %}
+      <tr>
+        <td>{{ e.date }}</td>
+        <td>{{ e.member.name }}</td>
+        <td>৳{{ e.amount }}</td>
+        <td>{{ e.note or '-' }}</td>
+        <td class="d-flex gap-1">
+          <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editDeposit{{ e.id }}">Edit</button>
+          <form method="post" action="{{ url_for('deposits.delete', entry_id=e.id) }}" onsubmit="return confirm('Delete this deposit?');">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+
+      <div class="modal fade" id="editDeposit{{ e.id }}" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <form method="post" action="{{ url_for('deposits.edit', entry_id=e.id) }}">
+              <div class="modal-header"><h5 class="modal-title">Edit Deposit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body">
+                <div class="mb-3"><label class="form-label">Date</label>
+                  <input type="date" class="form-control" name="date" value="{{ e.date }}" required></div>
+                <div class="mb-3"><label class="form-label">Member</label>
+                  <select class="form-select" name="member_id" required>
+                    {% for m in members %}
+                      <option value="{{ m.id }}" {% if m.id == e.member_id %}selected{% endif %}>{{ m.name }}</option>
+                    {% endfor %}
+                  </select></div>
+                <div class="mb-3"><label class="form-label">Amount (৳)</label>
+                  <input type="number" step="0.01" min="0" class="form-control" name="amount" value="{{ e.amount }}" required></div>
+                <div class="mb-3"><label class="form-label">Note (optional)</label>
+                  <input class="form-control" name="note" value="{{ e.note or '' }}"></div>
+              </div>
+              <div class="modal-footer"><button class="btn btn-primary" type="submit">Save</button></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <tr><td colspan="5" class="text-center text-muted">No deposits for this month.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="modal fade" id="addDepositModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('deposits.add') }}">
+        <input type="hidden" name="year" value="{{ year }}">
+        <input type="hidden" name="month" value="{{ month }}">
+        <div class="modal-header"><h5 class="modal-title">Add Deposit</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="mb-3"><label class="form-label">Date</label>
+            <input type="date" class="form-control" name="date" required></div>
+          <div class="mb-3"><label class="form-label">Member</label>
+            <select class="form-select" name="member_id" required>
+              <option value="" disabled selected>Select member</option>
+              {% for m in members %}
+                <option value="{{ m.id }}">{{ m.name }}</option>
+              {% endfor %}
+            </select></div>
+          <div class="mb-3"><label class="form-label">Amount (৳)</label>
+            <input type="number" step="0.01" min="0" class="form-control" name="amount" required></div>
+          <div class="mb-3"><label class="form-label">Note (optional)</label>
+            <input class="form-control" name="note"></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-primary" type="submit">Add Deposit</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

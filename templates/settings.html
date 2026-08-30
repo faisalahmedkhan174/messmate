@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Settings - MessMate{% endblock %}
+{% block content %}
+<h4 class="mb-3">Settings</h4>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title">Profile</h6>
+    <form method="post" action="{{ url_for('settings.update_profile') }}">
+      <div class="mb-3"><label class="form-label">Mess / Hostel Name</label>
+        <input class="form-control" name="mess_name" value="{{ mess.name }}" required></div>
+      <div class="mb-3"><label class="form-label">Manager Name</label>
+        <input class="form-control" name="manager_name" value="{{ mess.manager_name }}" required></div>
+      <div class="mb-3"><label class="form-label">Username</label>
+        <input class="form-control" name="username" value="{{ user.username }}" required></div>
+      <button class="btn btn-primary" type="submit">Save Profile</button>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title">Change Password</h6>
+    <form method="post" action="{{ url_for('settings.update_password') }}">
+      <div class="mb-3"><label class="form-label">Current Password</label>
+        <input type="password" class="form-control" name="current_password" required></div>
+      <div class="mb-3"><label class="form-label">New Password</label>
+        <input type="password" class="form-control" name="new_password" required></div>
+      <div class="mb-3"><label class="form-label">Confirm New Password</label>
+        <input type="password" class="form-control" name="confirm_password" required></div>
+      <button class="btn btn-primary" type="submit">Update Password</button>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title">Target Meal Rate</h6>
+    <form method="post" action="{{ url_for('settings.update_target') }}" class="row g-2 align-items-end">
+      <div class="col-auto">
+        <input type="number" step="0.01" min="0" class="form-control" name="target_meal_rate"
+               value="{{ mess.target_meal_rate if mess.target_meal_rate is not none else '' }}" placeholder="Not set">
+      </div>
+      <div class="col-auto"><button class="btn btn-outline-primary" type="submit">Update</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title">Demo Data</h6>
+    <p class="text-muted small">Load sample members, meals, bazar, and deposits for the current month to explore the app.</p>
+    <form method="post" action="{{ url_for('settings.load_demo_data') }}" onsubmit="return confirm('Load demo data into this mess?');">
+      <button class="btn btn-outline-secondary" type="submit">Load Demo Data</button>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title">Backup</h6>
+    <p class="text-muted small">Download a JSON backup of this mess's data only.</p>
+    <a class="btn btn-outline-secondary" href="{{ url_for('settings.backup_json') }}">Download JSON Backup</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Reports - MessMate{% endblock %}
+{% block content %}
+<h4 class="mb-2">Reports</h4>
+{% include "_month_selector.html" %}
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title">Monthly Report</h6>
+    <ul class="list-unstyled mb-3">
+      <li>Total Members: <strong>{{ total_members }}</strong></li>
+      <li>Total Meals: <strong>{{ totals.total_meals }}</strong></li>
+      <li>Total বাজার: <strong>৳{{ totals.total_bazar }}</strong></li>
+      <li>Total Deposits: <strong>৳{{ totals.total_deposits }}</strong></li>
+      <li>Final Meal Rate: <strong>৳{{ totals.final_rate }}</strong></li>
+    </ul>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('reports.export_settlement_csv', year=year, month=month) }}">Export Settlement CSV</a>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('reports.export_members_csv') }}">Export Members CSV</a>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('reports.export_bazar_csv', year=year, month=month) }}">Export Bazar CSV</a>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title">Member-wise Settlement</h6>
+    <div class="table-responsive">
+      <table class="table table-sm table-striped">
+        <thead><tr><th>Member</th><th>Meals</th><th>Meal Cost</th><th>Deposit</th><th>Balance</th></tr></thead>
+        <tbody>
+        {% for row in settlement %}
+          <tr>
+            <td>{{ row.member.name }}</td>
+            <td>{{ row.total_meals }}</td>
+            <td>৳{{ row.meal_cost }}</td>
+            <td>৳{{ row.total_deposit }}</td>
+            <td>৳{{ row.balance }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title">Yearly Report ({{ year }})</h6>
+    <div class="table-responsive">
+      <table class="table table-sm table-striped">
+        <thead><tr><th>Month</th><th>Total Meals</th><th>Total বাজার</th><th>Final Meal Rate</th></tr></thead>
+        <tbody>
+        {% set month_names = ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
+        {% for row in yearly_rows %}
+          <tr>
+            <td>{{ month_names[row.month-1] }}</td>
+            <td>{{ row.total_meals }}</td>
+            <td>৳{{ row.total_bazar }}</td>
+            <td>৳{{ row.final_rate }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="text-center text-muted">No data yet this year.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <canvas id="yearlyChart" height="100"></canvas>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const monthNames = {{ ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']|tojson }};
+const yearlyRows = {{ yearly_rows|tojson }};
+new Chart(document.getElementById('yearlyChart'), {
+  type: 'line',
+  data: {
+    labels: yearlyRows.map(r => monthNames[r.month - 1]),
+    datasets: [{
+      label: 'Final Meal Rate (৳)',
+      data: yearlyRows.map(r => r.final_rate),
+      borderColor: '#198754',
+      backgroundColor: 'rgba(25,135,84,0.15)',
+      tension: 0.25,
+      fill: true,
+    }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } } }
+});
+</script>
+{% endblock %}

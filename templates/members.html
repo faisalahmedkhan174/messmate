@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Members - MessMate{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h4 class="mb-0">Members</h4>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMemberModal">+ Add Member</button>
+</div>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-6 col-md-4">
+    <input type="text" class="form-control" name="q" placeholder="Search member..." value="{{ q }}">
+  </div>
+  <div class="col-6 col-md-3">
+    <select name="status" class="form-select" onchange="this.form.submit()">
+      <option value="all" {% if status_filter=='all' %}selected{% endif %}>All</option>
+      <option value="Active" {% if status_filter=='Active' %}selected{% endif %}>Active</option>
+      <option value="Inactive" {% if status_filter=='Inactive' %}selected{% endif %}>Inactive</option>
+    </select>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-outline-secondary">Filter</button>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for m in members %}
+      <tr>
+        <td>{{ m.id }}</td>
+        <td><a href="{{ url_for('members.details', member_id=m.id) }}">{{ m.name }}</a></td>
+        <td>{{ m.phone or '-' }}</td>
+        <td>{{ m.joining_date }}</td>
+        <td>
+          {% if m.status == 'Active' %}<span class="badge bg-success">Active</span>
+          {% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+        </td>
+        <td class="d-flex gap-1 flex-wrap">
+          <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMemberModal{{ m.id }}">Edit</button>
+          <form method="post" action="{{ url_for('members.toggle_status', member_id=m.id) }}">
+            <button class="btn btn-sm btn-outline-warning">{{ 'Deactivate' if m.status=='Active' else 'Reactivate' }}</button>
+          </form>
+          <form method="post" action="{{ url_for('members.delete', member_id=m.id) }}" onsubmit="return confirm('Delete this member and all related records?');">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+
+      <div class="modal fade" id="editMemberModal{{ m.id }}" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <form method="post" action="{{ url_for('members.edit', member_id=m.id) }}">
+              <div class="modal-header"><h5 class="modal-title">Edit Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body">
+                <div class="mb-3"><label class="form-label">Name</label>
+                  <input class="form-control" name="name" value="{{ m.name }}" required></div>
+                <div class="mb-3"><label class="form-label">Phone</label>
+                  <input class="form-control" name="phone" value="{{ m.phone or '' }}"></div>
+                <div class="mb-3"><label class="form-label">Joining Date</label>
+                  <input type="date" class="form-control" name="joining_date" value="{{ m.joining_date }}"></div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-primary" type="submit">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <tr><td colspan="6" class="text-center text-muted">No members found.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="modal fade" id="addMemberModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('members.add') }}">
+        <div class="modal-header"><h5 class="modal-title">Add Member</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="mb-3"><label class="form-label">Name</label>
+            <input class="form-control" name="name" required></div>
+          <div class="mb-3"><label class="form-label">Phone (optional)</label>
+            <input class="form-control" name="phone"></div>
+          <div class="mb-3"><label class="form-label">Joining Date</label>
+            <input type="date" class="form-control" name="joining_date" value="{{ '' }}"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" type="submit">Add Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
