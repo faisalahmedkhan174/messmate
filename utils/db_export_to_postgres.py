@@ -35,7 +35,9 @@ def migrate_sqlite_to_postgres(sqlite_path, postgres_url):
 
     clean_pg_url = postgres_url.strip()
     if clean_pg_url.startswith("postgres://"):
-        clean_pg_url = clean_pg_url.replace("postgres://", "postgresql://", 1)
+        clean_pg_url = clean_pg_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif clean_pg_url.startswith("postgresql://"):
+        clean_pg_url = clean_pg_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
     print(f"Connecting to source SQLite: {sqlite_path}")
     print(f"Connecting to target PostgreSQL database...")
