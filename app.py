@@ -93,9 +93,31 @@ def create_app(config_class=Config):
         db.session.rollback()
         return render_template("errors/500.html"), 500
 
+    # Reverse proxy support (Render, Heroku, Cloudflare) for HTTPS headers
+    if os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER"):
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
     with app.app_context():
-        # Auto-create tables for fresh databases
+        # Auto-create tables for fresh databases (PostgreSQL, SQLite, etc.)
         db.create_all()
+
+        # Optional startup creator role assignment if CREATOR_USERNAME is configured
+        creator_env = (os.environ.get("CREATOR_USERNAME") or os.environ.get("ADMIN_USERNAME") or "").strip()
+        if creator_env:
+            try:
+                from models.user import User
+                users = User.query.filter(db.func.lower(User.username) == creator_env.lower()).all()
+                promoted = False
+                for u in users:
+                    if u.role != "Creator":
+                        u.role = "Creator"
+                        promoted = True
+                if promoted:
+                    db.session.commit()
+            except Exception as exc:
+                db.session.rollback()
+                app.logger.warning(f"Creator startup promotion skipped: {exc}")
 
         # Safely apply migrations if using SQLite database file
         uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")

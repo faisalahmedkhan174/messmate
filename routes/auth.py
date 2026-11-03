@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 
 from models import db
@@ -40,8 +41,11 @@ def register():
             db.session.add(mess)
             db.session.flush()  # get mess.id
 
+            creator_env = (os.environ.get("CREATOR_USERNAME") or os.environ.get("ADMIN_USERNAME") or "").strip()
+            role = "Creator" if creator_env and username.lower() == creator_env.lower() else "Manager"
+
             user = User(mess_id=mess.id, username=username, manager_name=manager_name,
-                        role="Manager")
+                        role=role)
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
