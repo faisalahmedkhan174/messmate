@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+{% block title %}Creator Control Center - MessMate{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 pb-3 border-bottom">
+    <div>
+      <h2 class="h3 fw-bold text-slate-900 mb-1 d-flex align-items-center gap-2">
+        <i class="bi bi-shield-lock-fill text-primary"></i>
+        <span>Creator Control Center</span>
+      </h2>
+      <p class="text-muted mb-0">System-wide monitoring, mess governance, manager controls, and audit trails.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-journal-text me-1"></i>Audit Logs
+      </a>
+      <a href="{{ url_for('about.index') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-person-badge me-1"></i>Creator Profile
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- System KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body p-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="text-muted small fw-semibold text-uppercase">Messes</span>
+          <span class="p-2 rounded-3 bg-primary-subtle text-primary"><i class="bi bi-building fs-5"></i></span>
+        </div>
+        <h3 class="fw-bold mb-1">{{ stats.total_messes }}</h3>
+        <div class="small d-flex gap-2">
+          <span class="badge bg-success-subtle text-success border border-success-subtle">{{ stats.active_messes }} Active</span>
+          {% if stats.suspended_messes > 0 %}
+          <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ stats.suspended_messes }} Suspended</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body p-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="text-muted small fw-semibold text-uppercase">Accounts</span>
+          <span class="p-2 rounded-3 bg-info-subtle text-info"><i class="bi bi-people fs-5"></i></span>
+        </div>
+        <h3 class="fw-bold mb-1">{{ stats.total_users }}</h3>
+        <div class="small d-flex gap-2">
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ stats.total_creators }} Creator</span>
+          <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">{{ stats.total_managers }} Managers</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body p-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="text-muted small fw-semibold text-uppercase">Hostel Activity</span>
+          <span class="p-2 rounded-3 bg-warning-subtle text-warning"><i class="bi bi-egg-fried fs-5"></i></span>
+        </div>
+        <h3 class="fw-bold mb-1">{{ stats.total_members }} <span class="fs-6 fw-normal text-muted">Members</span></h3>
+        <div class="small text-muted">
+          <i class="bi bi-check2-circle text-success me-1"></i><strong>{{ stats.total_meals }}</strong> meals tracked
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body p-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="text-muted small fw-semibold text-uppercase">System Financials</span>
+          <span class="p-2 rounded-3 bg-success-subtle text-success"><i class="bi bi-cash-coin fs-5"></i></span>
+        </div>
+        <h3 class="fw-bold mb-1">{{ stats.total_bazar|bdt }}</h3>
+        <div class="small text-muted">
+          <span>Deposits: <strong>{{ stats.total_deposits|bdt }}</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mess Governance Table -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-white py-3 border-0 d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h5 class="fw-bold mb-0 text-slate-900 d-flex align-items-center gap-2">
+        <i class="bi bi-building text-primary"></i> All Messes
+        <span class="badge bg-primary-subtle text-primary rounded-pill">{{ messes|length }}</span>
+      </h5>
+      <p class="text-muted small mb-0">Inspect and toggle operational status for each mess.</p>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 60px;">ID</th>
+          <th>Mess Name</th>
+          <th>Manager</th>
+          <th class="text-center">Members</th>
+          <th class="text-center">Meals</th>
+          <th class="text-end">Total Bazar</th>
+          <th class="text-end">Total Deposits</th>
+          <th class="text-center">Status</th>
+          <th class="text-end" style="min-width: 170px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in messes %}
+        <tr class="{% if m.status == 'Suspended' %}table-danger text-muted{% endif %}">
+          <td class="fw-semibold text-muted">#{{ m.id }}</td>
+          <td>
+            <div class="fw-bold text-slate-900">{{ m.name }}</div>
+            <div class="small text-muted">Created {{ m.created_at.strftime('%d %b %Y') if m.created_at else 'N/A' }}</div>
+          </td>
+          <td>
+            <div><i class="bi bi-person me-1 text-muted"></i>{{ m.manager_name }}</div>
+          </td>
+          <td class="text-center">
+            <span class="badge bg-light text-dark border">{{ m.member_count }}</span>
+          </td>
+          <td class="text-center">
+            <span class="badge bg-light text-dark border">{{ m.meal_count }}</span>
+          </td>
+          <td class="text-end fw-semibold">{{ m.total_bazar|bdt }}</td>
+          <td class="text-end fw-semibold text-success">{{ m.total_deposits|bdt }}</td>
+          <td class="text-center">
+            {% if m.status == 'Active' %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle">
+              <i class="bi bi-check-circle me-1"></i>Active
+            </span>
+            {% else %}
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+              <i class="bi bi-slash-circle me-1"></i>Suspended
+            </span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <div class="d-inline-flex gap-1">
+              <!-- Switch View -->
+              <form method="POST" action="{{ url_for('admin.switch_mess', mess_id=m.id) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-info" title="Inspect this mess dashboard">
+                  <i class="bi bi-box-arrow-in-right me-1"></i>Inspect
+                </button>
+              </form>
+
+              <!-- Suspend / Activate Toggle Button -->
+              <form method="POST" action="{{ url_for('admin.toggle_mess_status', mess_id=m.id) }}" class="d-inline"
+                    onsubmit="return confirm('Are you sure you want to {{ 'suspend' if m.status == 'Active' else 'reactivate' }} the mess \'{{ m.name }}\'?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if m.status == 'Active' %}
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Suspend mess access">
+                  <i class="bi bi-pause-circle me-1"></i>Suspend
+                </button>
+                {% else %}
+                <button type="submit" class="btn btn-sm btn-success" title="Reactivate mess access">
+                  <i class="bi bi-play-circle me-1"></i>Reactivate
+                </button>
+                {% endif %}
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center py-4 text-muted">No messes found in database.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Manager & Account Control Table -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-white py-3 border-0 d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h5 class="fw-bold mb-0 text-slate-900 d-flex align-items-center gap-2">
+        <i class="bi bi-person-gear text-primary"></i> Managers & Accounts
+        <span class="badge bg-primary-subtle text-primary rounded-pill">{{ users|length }}</span>
+      </h5>
+      <p class="text-muted small mb-0">Manage credentials and roles for mess managers and creators.</p>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 60px;">ID</th>
+          <th>Username</th>
+          <th>Full / Manager Name</th>
+          <th>Belongs To Mess</th>
+          <th class="text-center">Role</th>
+          <th>Created</th>
+          <th class="text-end" style="min-width: 200px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td class="fw-semibold text-muted">#{{ u.id }}</td>
+          <td class="fw-bold">
+            <span class="font-monospace text-primary">{{ u.username }}</span>
+          </td>
+          <td>{{ u.manager_name }}</td>
+          <td>
+            {% if u.mess %}
+            <span class="fw-semibold">{{ u.mess.name }}</span>
+            <span class="badge bg-light text-muted border ms-1">#{{ u.mess_id }}</span>
+            {% else %}
+            <span class="text-muted fst-italic">None</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if u.role == 'Creator' %}
+            <span class="badge bg-primary text-white">
+              <i class="bi bi-shield-fill-check me-1"></i>Creator
+            </span>
+            {% elif u.role == 'Manager' %}
+            <span class="badge bg-info-subtle text-info border border-info-subtle">
+              <i class="bi bi-person-badge me-1"></i>Manager
+            </span>
+            {% else %}
+            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+              {{ u.role }}
+            </span>
+            {% endif %}
+          </td>
+          <td class="small text-muted">{{ u.created_at.strftime('%d %b %Y') if u.created_at else 'N/A' }}</td>
+          <td class="text-end">
+            <div class="d-inline-flex gap-1">
+              <!-- Reset Password Modal Trigger -->
+              <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#resetPassModal{{ u.id }}">
+                <i class="bi bi-key me-1"></i>Reset Password
+              </button>
+
+              <!-- Change Role Modal Trigger -->
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#changeRoleModal{{ u.id }}">
+                <i class="bi bi-shield-shaded me-1"></i>Role
+              </button>
+            </div>
+
+            <!-- Reset Password Modal -->
+            <div class="modal fade text-start" id="resetPassModal{{ u.id }}" tabindex="-1" aria-labelledby="resetPassLabel{{ u.id }}" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                  <form method="POST" action="{{ url_for('admin.reset_user_password', user_id=u.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header border-bottom">
+                      <h5 class="modal-title fw-bold" id="resetPassLabel{{ u.id }}">
+                        <i class="bi bi-key text-warning me-1"></i>Reset Password: {{ u.username }}
+                      </h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <p class="text-muted small mb-3">
+                        Enter a secure new password for <strong>{{ u.manager_name }}</strong> (<code>{{ u.username }}</code>).
+                      </p>
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold">New Password</label>
+                        <input type="password" name="new_password" class="form-control" placeholder="Minimum 4 characters" minlength="4" required>
+                      </div>
+                    </div>
+                    <div class="modal-footer border-top bg-light">
+                      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                      <button type="submit" class="btn btn-warning fw-semibold">
+                        <i class="bi bi-check-lg me-1"></i>Update Password
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Change Role Modal -->
+            <div class="modal fade text-start" id="changeRoleModal{{ u.id }}" tabindex="-1" aria-labelledby="changeRoleLabel{{ u.id }}" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                  <form method="POST" action="{{ url_for('admin.change_user_role', user_id=u.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header border-bottom">
+                      <h5 class="modal-title fw-bold" id="changeRoleLabel{{ u.id }}">
+                        <i class="bi bi-shield-shaded text-primary me-1"></i>Change Role: {{ u.username }}
+                      </h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <p class="text-muted small mb-3">
+                        Current role for <strong>{{ u.username }}</strong> is <strong>{{ u.role }}</strong>.
+                      </p>
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold">Select New Role</label>
+                        <select name="role" class="form-select" required>
+                          <option value="Manager" {% if u.role == 'Manager' %}selected{% endif %}>Mess Manager (Regular Admin)</option>
+                          <option value="Creator" {% if u.role == 'Creator' %}selected{% endif %}>Creator / Super Admin (Full Control)</option>
+                          <option value="Member" {% if u.role == 'Member' %}selected{% endif %}>Member (View-only)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="modal-footer border-top bg-light">
+                      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                      <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="bi bi-check-lg me-1"></i>Save Role
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Recent Administrative Audit Logs Preview -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-white py-3 border-0 d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h5 class="fw-bold mb-0 text-slate-900 d-flex align-items-center gap-2">
+        <i class="bi bi-journal-text text-primary"></i> Recent Administrative Audit Logs
+      </h5>
+      <p class="text-muted small mb-0">Immutable record of recent high-privilege operations.</p>
+    </div>
+    <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-arrow-right-circle me-1"></i>View Full History
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 180px;">Timestamp</th>
+          <th>Admin User</th>
+          <th>Action</th>
+          <th>Target</th>
+          <th>Details</th>
+          <th class="text-end">IP Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in audit_logs %}
+        <tr>
+          <td class="small text-muted font-monospace">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else 'N/A' }}</td>
+          <td class="fw-semibold">
+            <i class="bi bi-person-fill text-primary me-1"></i>{{ log.admin_username }}
+          </td>
+          <td>
+            {% if log.action in ('SUSPEND_MESS') %}
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ log.action }}</span>
+            {% elif log.action in ('ACTIVATE_MESS') %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle">{{ log.action }}</span>
+            {% elif log.action in ('RESET_PASSWORD') %}
+            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">{{ log.action }}</span>
+            {% elif log.action in ('CHANGE_ROLE') %}
+            <span class="badge bg-info-subtle text-info border border-info-subtle">{{ log.action }}</span>
+            {% else %}
+            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">{{ log.action }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge bg-light text-dark border">{{ log.target_type }}</span>
+            <span class="fw-medium ms-1">{{ log.target_name or ('#' ~ log.target_id if log.target_id else '') }}</span>
+          </td>
+          <td class="small text-muted">{{ log.details or '-' }}</td>
+          <td class="text-end small text-muted font-monospace">{{ log.ip_address or 'Local' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center py-4 text-muted">No administrative actions logged yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

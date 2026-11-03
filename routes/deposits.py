@@ -1,22 +1,11 @@
-from datetime import date, datetime
+from datetime import date
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-
-from models import db
 from models.member import Member
-from models.deposit import Deposit
-from .helpers import login_required, current_mess, month_date_range
+from services.deposit_service import DepositService
+from utils.security import login_required, current_mess
 
 bp = Blueprint("deposits", __name__)
-
-
-def _parse_date(value, default=None):
-    if not value:
-        return default or date.today()
-    try:
-        return datetime.strptime(value, "%Y-%m-%d").date()
-    except ValueError:
-        return default or date.today()
 
 
 @bp.route("/deposits")
@@ -26,17 +15,23 @@ def index():
     today = date.today()
     year = request.args.get("year", type=int) or today.year
     month = request.args.get("month", type=int) or today.month
-    start, end = month_date_range(year, month)
 
-    entries = (Deposit.query.filter_by(mess_id=mess.id)
-               .filter(Deposit.date >= start, Deposit.date <= end)
-               .order_by(Deposit.date.desc(), Deposit.id.desc()).all())
+    entries = DepositService.get_entries(mess.id, year, month)
+    members = (
+        Member.query.filter_by(mess_id=mess.id, status="Active")
+        .order_by(Member.name.asc())
+        .all()
+    )
+    month_total = DepositService.get_month_total(mess.id, year, month)
 
-    members = Member.query.filter_by(mess_id=mess.id, status="Active").order_by(Member.name.asc()).all()
-    month_total = round(sum(e.amount for e in entries), 2)
-
-    return render_template("deposits.html", entries=entries, members=members, year=year, month=month,
-                            month_total=month_total)
+    return render_template(
+        "deposits.html",
+        entries=entries,
+        members=members,
+        year=year,
+        month=month,
+        month_total=month_total,
+    )
 
 
 @bp.route("/deposits/add", methods=["POST"])
@@ -46,71 +41,66 @@ def add():
     year = request.form.get("year", type=int)
     month = request.form.get("month", type=int)
     member_id = request.form.get("member_id", type=int)
-    entry_date = _parse_date(request.form.get("date"))
-    amount_raw = request.form.get("amount")
-    note = (request.form.get("note") or "").strip() or None
+    entry_date = request.form.get("date")
+    amount = request.form.get("amount")
+    payment_method = request.form.get("payment_method", "Cash")
+    note = request.form.get("note")
 
     try:
-        amount = float(amount_raw)
-    except (TypeError, ValueError):
-        flash("Please enter a valid deposit amount.", "danger")
+        entry = DepositService.add_entry(
+            mess_id=mess.id,
+            member_id=member_id,
+            entry_date=entry_date,
+            amount=amount,
+            payment_method=payment_method,
+            note=note,
+        )
+        flash("Deposit recorded successfully.", "success")
+        return redirect(url_for("deposits.index", year=entry.date.year, month=entry.date.month))
+    except ValueError as e:
+        flash(str(e), "danger")
         return redirect(url_for("deposits.index", year=year, month=month))
-
-    if amount < 0:
-        flash("Deposit amount cannot be negative.", "danger")
-        return redirect(url_for("deposits.index", year=year, month=month))
-
-    member = Member.query.filter_by(id=member_id, mess_id=mess.id).first()
-    if not member:
-        flash("Please select a valid member for this deposit.", "danger")
-        return redirect(url_for("deposits.index", year=year, month=month))
-
-    entry = Deposit(mess_id=mess.id, member_id=member.id, date=entry_date, amount=amount, note=note)
-    db.session.add(entry)
-    db.session.commit()
-    flash("Deposit recorded.", "success")
-    return redirect(url_for("deposits.index", year=entry_date.year, month=entry_date.month))
 
 
 @bp.route("/deposits/<int:entry_id>/edit", methods=["POST"])
 @login_required
 def edit(entry_id):
     mess = current_mess()
-    entry = Deposit.query.filter_by(id=entry_id, mess_id=mess.id).first_or_404()
+    entry = DepositService.get_entry(mess.id, entry_id)
+    if not entry:
+        abort(404)
 
     member_id = request.form.get("member_id", type=int)
-    entry_date = _parse_date(request.form.get("date"), entry.date)
-    amount_raw = request.form.get("amount")
-    note = (request.form.get("note") or "").strip() or None
+    entry_date = request.form.get("date")
+    amount = request.form.get("amount")
+    payment_method = request.form.get("payment_method", "Cash")
+    note = request.form.get("note")
 
     try:
-        amount = float(amount_raw)
-    except (TypeError, ValueError):
-        flash("Please enter a valid deposit amount.", "danger")
+        updated = DepositService.update_entry(
+            mess_id=mess.id,
+            entry_id=entry_id,
+            member_id=member_id,
+            entry_date=entry_date,
+            amount=amount,
+            payment_method=payment_method,
+            note=note,
+        )
+        flash("Deposit updated. Settlement recalculated.", "success")
+        return redirect(url_for("deposits.index", year=updated.date.year, month=updated.date.month))
+    except ValueError as e:
+        flash(str(e), "danger")
         return redirect(url_for("deposits.index", year=entry.date.year, month=entry.date.month))
-
-    if amount < 0:
-        flash("Deposit amount cannot be negative.", "danger")
-        return redirect(url_for("deposits.index", year=entry.date.year, month=entry.date.month))
-
-    member = Member.query.filter_by(id=member_id, mess_id=mess.id).first()
-    if member:
-        entry.member_id = member.id
-    entry.date = entry_date
-    entry.amount = amount
-    entry.note = note
-    db.session.commit()
-    flash("Deposit updated. Settlement recalculated.", "success")
-    return redirect(url_for("deposits.index", year=entry_date.year, month=entry_date.month))
 
 
 @bp.route("/deposits/<int:entry_id>/delete", methods=["POST"])
 @login_required
 def delete(entry_id):
     mess = current_mess()
-    entry = Deposit.query.filter_by(id=entry_id, mess_id=mess.id).first_or_404()
-    y, m = entry.date.year, entry.date.month
-    db.session.delete(entry)
-    db.session.commit()
+    result = DepositService.delete_entry(mess.id, entry_id)
+    if not result:
+        abort(404)
+
+    year, month = result
     flash("Deposit deleted. Settlement recalculated.", "info")
-    return redirect(url_for("deposits.index", year=y, month=m))
+    return redirect(url_for("deposits.index", year=year, month=month))

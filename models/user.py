@@ -14,7 +14,7 @@ class User(db.Model):
     username = db.Column(db.String(80), nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     manager_name = db.Column(db.String(150), nullable=False)
-    role = db.Column(db.String(20), default="Manager", nullable=False)
+    role = db.Column(db.String(20), default="Manager", nullable=False)  # Creator / Manager / Member
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
@@ -22,3 +22,11 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def is_creator(self):
+        return self.role == "Creator"
+
+    @property
+    def is_manager(self):
+        return self.role in ("Manager", "Creator")

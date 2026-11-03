@@ -1,9 +1,9 @@
 from datetime import date
-
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 
 from models import db
-from .helpers import login_required, current_mess, get_member_settlement, get_month_totals
+from services.settlement_service import SettlementService
+from utils.security import login_required, current_mess
 
 bp = Blueprint("settlement", __name__)
 
@@ -16,15 +16,26 @@ def index():
     year = request.args.get("year", type=int) or today.year
     month = request.args.get("month", type=int) or today.month
     status_filter = request.args.get("status", "all")
+    q = (request.args.get("q") or "").strip().lower()
 
-    settlement = get_member_settlement(mess.id, year, month)
+    settlement = SettlementService.get_member_settlement(mess.id, year, month)
     if status_filter in ("due", "refund", "settled"):
         settlement = [s for s in settlement if s["status"] == status_filter]
+    if q:
+        settlement = [s for s in settlement if q in s["member"].name.lower()]
 
-    totals = get_month_totals(mess.id, year, month)
+    totals = SettlementService.get_month_totals(mess.id, year, month)
 
-    return render_template("settlement.html", settlement=settlement, totals=totals,
-                            year=year, month=month, status_filter=status_filter, mess=mess)
+    return render_template(
+        "settlement.html",
+        settlement=settlement,
+        totals=totals,
+        year=year,
+        month=month,
+        status_filter=status_filter,
+        q=q,
+        mess=mess,
+    )
 
 
 @bp.route("/settlement/target", methods=["POST"])

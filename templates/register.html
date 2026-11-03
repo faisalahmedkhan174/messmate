@@ -1,38 +1,71 @@
 {% extends "base.html" %}
-{% block title %}Register - MessMate{% endblock %}
+{% block title %}Register New Mess - MessMate{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-sm-8 col-md-5 col-lg-4">
-    <div class="card shadow-sm mt-4">
-      <div class="card-body p-4">
-        <h3 class="text-center mb-1">🍽️ MessMate</h3>
-        <p class="text-center text-muted mb-4">Create your mess account</p>
+<div class="row justify-content-center my-4 my-md-5">
+  <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-4 p-md-5">
+        <div class="text-center mb-4">
+          <div class="display-6 mb-2">🍽️</div>
+          <h3 class="fw-bold mb-1">Create Mess Account</h3>
+          <p class="text-muted small">Set up a modern mess management dashboard</p>
+        </div>
+
         <form method="post" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
           <div class="mb-3">
-            <label class="form-label">Mess / Hostel Name</label>
-            <input type="text" class="form-control form-control-lg" name="mess_name" value="{{ form.get('mess_name','') }}" required>
+            <label class="form-label">Mess / Hostel Name <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted"><i class="bi bi-building"></i></span>
+              <input type="text" class="form-control" name="mess_name"
+                     value="{{ form.get('mess_name','') }}" placeholder="e.g. Sunrise Hostel" required autofocus>
+            </div>
           </div>
+
           <div class="mb-3">
-            <label class="form-label">Manager Name</label>
-            <input type="text" class="form-control form-control-lg" name="manager_name" value="{{ form.get('manager_name','') }}" required>
+            <label class="form-label">Manager Full Name <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted"><i class="bi bi-person-badge"></i></span>
+              <input type="text" class="form-control" name="manager_name"
+                     value="{{ form.get('manager_name','') }}" placeholder="e.g. Tanvir Ahmed" required>
+            </div>
           </div>
+
           <div class="mb-3">
-            <label class="form-label">Username</label>
-            <input type="text" class="form-control form-control-lg" name="username" value="{{ form.get('username','') }}" required>
+            <label class="form-label">Manager Username <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted"><i class="bi bi-person"></i></span>
+              <input type="text" class="form-control" name="username"
+                     value="{{ form.get('username','') }}" placeholder="Unique login username" required>
+            </div>
           </div>
+
           <div class="mb-3">
-            <label class="form-label">Password</label>
-            <input type="password" class="form-control form-control-lg" name="password" required>
+            <label class="form-label">Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted"><i class="bi bi-lock"></i></span>
+              <input type="password" class="form-control" name="password" placeholder="At least 4 characters" required>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Confirm Password</label>
-            <input type="password" class="form-control form-control-lg" name="confirm_password" required>
+
+          <div class="mb-4">
+            <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted"><i class="bi bi-shield-check"></i></span>
+              <input type="password" class="form-control" name="confirm_password" placeholder="Re-type password" required>
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary btn-lg w-100">Create Account</button>
+
+          <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+            <i class="bi bi-person-plus me-1"></i>Create Account
+          </button>
         </form>
-        <p class="text-center mt-3 mb-0">
-          Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a>
-        </p>
+
+        <div class="text-center pt-3 border-top">
+          <span class="text-muted small">Already registered?</span>
+          <a href="{{ url_for('auth.login') }}" class="small fw-semibold ms-1">Login here</a>
+        </div>
       </div>
     </div>
   </div>

@@ -1,20 +1,23 @@
-<form class="row row-cols-auto g-2 align-items-center mb-3" method="get">
-  <div class="col">
-    <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
-      {% for y in range(2024, 2031) %}
-        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col">
-    <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+<form class="d-flex align-items-center gap-2 mb-3 flex-wrap" method="get">
+  <div class="input-group input-group-sm w-auto">
+    <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-calendar3"></i></span>
+    <select name="month" class="form-select form-select-sm border-start-0" onchange="this.form.submit()" aria-label="Select Month">
       {% set month_names = ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
       {% for m in range(1, 13) %}
         <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ month_names[m-1] }}</option>
       {% endfor %}
     </select>
   </div>
-  <div class="col">
-    <button type="submit" class="btn btn-sm btn-outline-primary">Go</button>
+  
+  <div class="input-group input-group-sm w-auto">
+    <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Select Year">
+      {% for y in range(2024, 2032) %}
+        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
   </div>
+  
+  <noscript>
+    <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+  </noscript>
 </form>

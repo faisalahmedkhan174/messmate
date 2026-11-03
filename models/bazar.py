@@ -11,4 +11,5 @@ class Bazar(db.Model):
     date = db.Column(db.Date, nullable=False, index=True)
     amount = db.Column(db.Float, nullable=False)
     items_description = db.Column(db.String(500), nullable=True)
+    category = db.Column(db.String(50), default="Groceries", nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

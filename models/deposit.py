@@ -10,5 +10,6 @@ class Deposit(db.Model):
     member_id = db.Column(db.Integer, db.ForeignKey("member.id"), nullable=False, index=True)
     date = db.Column(db.Date, nullable=False, index=True)
     amount = db.Column(db.Float, nullable=False)
+    payment_method = db.Column(db.String(50), default="Cash", nullable=True)
     note = db.Column(db.String(300), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

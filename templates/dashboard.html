@@ -1,93 +1,140 @@
 {% extends "base.html" %}
 {% block title %}Dashboard - MessMate{% endblock %}
 {% block content %}
-<h4 class="mb-2">Dashboard</h4>
-{% include "_month_selector.html" %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div>
+    <h3 class="mb-0 fw-bold">Dashboard</h3>
+    <p class="text-muted small mb-0">Overview of mess meals, bazar expenses, and running rate</p>
+  </div>
+  <div>
+    {% include "_month_selector.html" %}
+  </div>
+</div>
 
 {% if warning %}
-<div class="alert alert-warning py-2">
-  ⚠️ Meal rate is ৳{{ warning }} above the target.
+<div class="alert alert-warning shadow-sm mb-3">
+  <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+  <div>
+    <strong>Meal rate is {{ (warning)|bdt }} above the target.</strong> Running rate has exceeded the planned threshold.
+  </div>
 </div>
 {% elif target is not none %}
-<div class="alert alert-success py-2">🟢 Within Target</div>
+<div class="alert alert-success shadow-sm mb-3">
+  <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+  <div><strong>🟢 Within Target:</strong> Current running meal rate is well within your budget limit.</div>
+</div>
 {% endif %}
 
-<div class="row g-3 mb-3">
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
   <div class="col-6 col-md-3">
-    <div class="card text-center h-100"><div class="card-body">
-      <div class="text-muted small">Total Members</div>
-      <div class="fs-4 fw-bold">{{ total_members }}</div>
-      <div class="text-muted small">{{ active_members }} active</div>
-    </div></div>
+    <div class="stat-card primary h-100">
+      <div class="stat-label">Total Members</div>
+      <div class="stat-value">{{ total_members }}</div>
+      <div class="stat-sub"><i class="bi bi-person-check text-success me-1"></i>{{ active_members }} Active</div>
+    </div>
   </div>
+  
   <div class="col-6 col-md-3">
-    <div class="card text-center h-100"><div class="card-body">
-      <div class="text-muted small">Total Meals</div>
-      <div class="fs-4 fw-bold">{{ totals.total_meals }}</div>
-    </div></div>
+    <div class="stat-card h-100">
+      <div class="stat-label">Total Meals</div>
+      <div class="stat-value">{{ totals.total_meals }}</div>
+      <div class="stat-sub text-muted">For current month</div>
+    </div>
   </div>
+
   <div class="col-6 col-md-3">
-    <div class="card text-center h-100"><div class="card-body">
-      <div class="text-muted small">Total বাজার</div>
-      <div class="fs-4 fw-bold">৳{{ totals.total_bazar }}</div>
-    </div></div>
+    <div class="stat-card h-100">
+      <div class="stat-label">Total Bazar</div>
+      <div class="stat-value">{{ (totals.total_bazar)|bdt }}</div>
+      <div class="stat-sub text-muted">Monthly spend</div>
+    </div>
   </div>
+
   <div class="col-6 col-md-3">
-    <div class="card text-center h-100"><div class="card-body">
-      <div class="text-muted small">Total Deposits</div>
-      <div class="fs-4 fw-bold">৳{{ totals.total_deposits }}</div>
-    </div></div>
+    <div class="stat-card h-100">
+      <div class="stat-label">Total Deposits</div>
+      <div class="stat-value">{{ (totals.total_deposits)|bdt }}</div>
+      <div class="stat-sub text-muted">Received funds</div>
+    </div>
   </div>
+
   <div class="col-6 col-md-3">
-    <div class="card text-center h-100"><div class="card-body">
-      <div class="text-muted small">Running Meal Rate</div>
-      <div class="fs-4 fw-bold">৳{{ current_running_rate }}</div>
-    </div></div>
+    <div class="stat-card primary h-100">
+      <div class="stat-label">Running Meal Rate</div>
+      <div class="stat-value text-primary">{{ (current_running_rate)|bdt }}</div>
+      <div class="stat-sub text-muted">Per meal cost to date</div>
+    </div>
   </div>
+
   <div class="col-6 col-md-3">
-    <div class="card text-center h-100"><div class="card-body">
-      <div class="text-muted small">Target Meal Rate</div>
-      <div class="fs-4 fw-bold">{% if target is not none %}৳{{ target }}{% else %}Not Set{% endif %}</div>
-    </div></div>
+    <div class="stat-card h-100">
+      <div class="stat-label">Target Meal Rate</div>
+      <div class="stat-value">{% if target is not none %}{{ (target)|bdt }}{% else %}<span class="text-muted fs-6">Not Set</span>{% endif %}</div>
+      <div class="stat-sub text-muted">Planned budget</div>
+    </div>
   </div>
+
   <div class="col-6 col-md-3">
-    <div class="card text-center h-100"><div class="card-body">
-      <div class="text-muted small">Final Meal Rate</div>
-      <div class="fs-4 fw-bold">৳{{ totals.final_rate }}</div>
-    </div></div>
+    <div class="stat-card h-100">
+      <div class="stat-label">Final Meal Rate</div>
+      <div class="stat-value">{{ (totals.final_rate)|bdt }}</div>
+      <div class="stat-sub text-muted">Bazar ÷ Total Meals</div>
+    </div>
   </div>
+
   <div class="col-6 col-md-3">
-    <div class="card text-center h-100"><div class="card-body">
-      <div class="text-muted small">Due / Refund</div>
-      <div class="fs-6 fw-bold text-danger">Due ৳{{ total_due }}</div>
-      <div class="fs-6 fw-bold text-success">Refund ৳{{ total_refund }}</div>
-    </div></div>
+    <div class="stat-card h-100">
+      <div class="stat-label">Net Settlement</div>
+      <div class="stat-value fs-5">
+        <span class="text-danger d-block">Due {{ (total_due)|bdt }}</span>
+        <span class="text-success d-block fs-6">Refund {{ (total_refund)|bdt }}</span>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="card mb-3">
+<!-- Chart Section -->
+<div class="card mb-4">
   <div class="card-body">
-    <h6 class="card-title">Running Meal Rate Trend</h6>
-    <canvas id="rateChart" height="100"></canvas>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="card-title mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Running Meal Rate Trend</h5>
+      <span class="badge bg-light text-muted border">৳ per meal</span>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="rateChart"></canvas>
+    </div>
   </div>
 </div>
 
-<div class="card mb-3">
+<!-- Daily History Table -->
+<div class="card mb-4">
   <div class="card-body">
-    <h6 class="card-title">Daily Meal Rate History</h6>
+    <h5 class="card-title"><i class="bi bi-clock-history me-2 text-primary"></i>Daily Meal Rate History</h5>
     <div class="table-responsive">
-      <table class="table table-sm table-striped align-middle">
-        <thead><tr><th>Date</th><th>Daily বাজার</th><th>Cum. বাজার</th><th>Daily Meals</th><th>Cum. Meals</th><th>Running Rate</th></tr></thead>
+      <table class="table table-hover align-middle mobile-cards">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Daily Bazar</th>
+            <th class="d-none d-sm-table-cell">Cum. Bazar</th>
+            <th>Daily Meals</th>
+            <th class="d-none d-sm-table-cell">Cum. Meals</th>
+            <th>Running Rate</th>
+          </tr>
+        </thead>
         <tbody>
         {% for row in history %}
           <tr>
-            <td>{{ row.date.strftime('%d %b') }}</td>
-            <td>৳{{ row.daily_bazar }}</td>
-            <td>৳{{ row.cumulative_bazar }}</td>
-            <td>{{ row.daily_meals }}</td>
-            <td>{{ row.cumulative_meals }}</td>
-            <td>৳{{ row.running_rate }}</td>
+            <td data-label="Date" class="fw-semibold">{{ row.date.strftime('%d %b') }}</td>
+            <td data-label="Daily Bazar">{{ (row.daily_bazar)|bdt }}</td>
+            <td class="d-none d-sm-table-cell" data-label="Cum. Bazar">{{ (row.cumulative_bazar)|bdt }}</td>
+            <td data-label="Daily Meals">{{ row.daily_meals }}</td>
+            <td class="d-none d-sm-table-cell" data-label="Cum. Meals">{{ row.cumulative_meals }}</td>
+            <td data-label="Running Rate" class="fw-bold text-primary">{{ (row.running_rate)|bdt }}</td>
           </tr>
+        {% else %}
+          <tr><td colspan="6" class="text-center text-muted py-3">No activity recorded for this month.</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -95,25 +142,47 @@
   </div>
 </div>
 
-<div class="card mb-3">
+<!-- Settlement Summary Table -->
+<div class="card mb-4">
   <div class="card-body">
-    <h6 class="card-title">Member Settlement Summary</h6>
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <h5 class="card-title mb-0"><i class="bi bi-wallet2 me-2 text-primary"></i>Member Settlement Summary</h5>
+      <a href="{{ url_for('settlement.index', year=year, month=month) }}" class="btn btn-sm btn-outline-primary">View Full Settlement</a>
+    </div>
     <div class="table-responsive">
-      <table class="table table-sm align-middle">
-        <thead><tr><th>Member</th><th>Meals</th><th>Meal Cost</th><th>Deposit</th><th>Balance</th></tr></thead>
+      <table class="table table-hover align-middle mobile-cards">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Meals</th>
+            <th>Meal Cost</th>
+            <th>Deposit</th>
+            <th>Balance Status</th>
+          </tr>
+        </thead>
         <tbody>
         {% for row in settlement %}
           <tr>
-            <td>{{ row.member.name }}</td>
-            <td>{{ row.total_meals }}</td>
-            <td>৳{{ row.meal_cost }}</td>
-            <td>৳{{ row.total_deposit }}</td>
-            <td>
-              {% if row.status == 'refund' %}<span class="text-success">🟢 Refund ৳{{ row.balance }}</span>
-              {% elif row.status == 'due' %}<span class="text-danger">🔴 Due ৳{{ -row.balance }}</span>
-              {% else %}<span class="text-secondary">✓ Settled</span>{% endif %}
+            <td data-label="Member">
+              <a href="{{ url_for('members.details', member_id=row.member.id, year=year, month=month) }}" class="fw-bold">
+                {{ row.member.name }}
+              </a>
+            </td>
+            <td data-label="Meals">{{ row.total_meals }}</td>
+            <td data-label="Meal Cost">{{ (row.meal_cost)|bdt }}</td>
+            <td data-label="Deposit">{{ (row.total_deposit)|bdt }}</td>
+            <td data-label="Balance Status">
+              {% if row.status == 'refund' %}
+                <span class="badge badge-refund">🟢 Refund {{ (row.balance)|bdt }}</span>
+              {% elif row.status == 'due' %}
+                <span class="badge badge-due">🔴 Due {{ (-row.balance)|bdt }}</span>
+              {% else %}
+                <span class="badge badge-settled">✓ Settled</span>
+              {% endif %}
             </td>
           </tr>
+        {% else %}
+          <tr><td colspan="5" class="text-center text-muted py-3">No members enrolled.</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -126,20 +195,65 @@
 <script>
 const labels = {{ history|map(attribute='date')|map('string')|list|tojson }};
 const rates = {{ history|map(attribute='running_rate')|list|tojson }};
-new Chart(document.getElementById('rateChart'), {
-  type: 'line',
-  data: {
-    labels: labels,
-    datasets: [{
-      label: 'Running Meal Rate (৳)',
-      data: rates,
-      borderColor: '#0d6efd',
-      backgroundColor: 'rgba(13,110,253,0.15)',
-      tension: 0.25,
-      fill: true,
-    }]
-  },
-  options: { responsive: true, plugins: { legend: { display: false } } }
-});
+const chartEl = document.getElementById('rateChart');
+
+if (chartEl) {
+  new Chart(chartEl, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Running Meal Rate (৳)',
+        data: rates,
+        borderColor: '#0284c7',
+        backgroundColor: 'rgba(14, 165, 233, 0.12)',
+        tension: 0.3,
+        borderWidth: 2.5,
+        pointBackgroundColor: '#0284c7',
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a',
+          titleFont: { family: 'Inter', size: 12 },
+          bodyFont: { family: 'Inter', size: 12 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: function(context) {
+              return 'Rate: ৳' + Number(context.raw).toFixed(2);
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            maxRotation: 45,
+            minRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 10,
+            font: { family: 'Inter', size: 11 }
+          }
+        },
+        y: {
+          grid: { color: '#f1f5f9' },
+          ticks: {
+            font: { family: 'Inter', size: 11 },
+            callback: function(value) { return '৳' + value; }
+          }
+        }
+      }
+    }
+  });
+}
 </script>
 {% endblock %}

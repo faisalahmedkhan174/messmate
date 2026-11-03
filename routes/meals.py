@@ -1,11 +1,10 @@
 from datetime import date
-
 from flask import Blueprint, render_template, request, jsonify
 
-from models import db
 from models.member import Member
-from models.meal import Meal
-from .helpers import login_required, current_mess, days_in_month, MEAL_TYPES
+from services.meal_service import MealService, MEAL_TYPES
+from utils.dates import days_in_month
+from utils.security import login_required, current_mess
 
 bp = Blueprint("meals", __name__)
 
@@ -18,25 +17,25 @@ def index():
     year = request.args.get("year", type=int) or today.year
     month = request.args.get("month", type=int) or today.month
 
-    members = Member.query.filter_by(mess_id=mess.id, status="Active").order_by(Member.name.asc()).all()
+    members = (
+        Member.query.filter_by(mess_id=mess.id, status="Active")
+        .order_by(Member.name.asc())
+        .all()
+    )
     day_count = days_in_month(year, month)
     days = list(range(1, day_count + 1))
 
-    meal_rows = Meal.query.filter(
-        Meal.mess_id == mess.id,
-        db.extract("year", Meal.date) == year,
-        db.extract("month", Meal.date) == month,
-    ).all()
-
-    # meal_map[member_id][day][meal_type] = taken (bool)
-    meal_map = {}
-    for m in meal_rows:
-        meal_map.setdefault(m.member_id, {}).setdefault(m.date.day, {})[m.meal_type] = m.taken
+    meal_map = MealService.get_month_meal_matrix(mess.id, year, month)
 
     return render_template(
         "meals.html",
-        members=members, days=days, year=year, month=month,
-        meal_map=meal_map, meal_types=MEAL_TYPES,
+        members=members,
+        days=days,
+        year=year,
+        month=month,
+        today_day=today.day if today.year == year and today.month == month else None,
+        meal_map=meal_map,
+        meal_types=MEAL_TYPES,
     )
 
 
@@ -51,10 +50,10 @@ def toggle():
         year = int(data.get("year"))
         month = int(data.get("month"))
         day = int(data.get("day"))
-        meal_type = data.get("meal_type")
+        meal_type = str(data.get("meal_type", "")).strip().lower()
         taken = str(data.get("taken")).lower() in ("true", "1", "yes")
     except (TypeError, ValueError):
-        return jsonify({"ok": False, "error": "Invalid request data."}), 400
+        return jsonify({"ok": False, "error": "Invalid request parameters."}), 400
 
     if meal_type not in MEAL_TYPES:
         return jsonify({"ok": False, "error": "Invalid meal type."}), 400
@@ -64,23 +63,17 @@ def toggle():
         return jsonify({"ok": False, "error": "Member not found."}), 404
 
     try:
-        meal_date = date(year, month, day)
-    except ValueError:
-        return jsonify({"ok": False, "error": "Invalid date."}), 400
-
-    try:
-        record = Meal.query.filter_by(
-            mess_id=mess.id, member_id=member_id, date=meal_date, meal_type=meal_type
-        ).first()
-        if record:
-            record.taken = taken
-        else:
-            record = Meal(mess_id=mess.id, member_id=member_id, date=meal_date,
-                           meal_type=meal_type, taken=taken)
-            db.session.add(record)
-        db.session.commit()
+        new_taken = MealService.toggle_meal(
+            mess_id=mess.id,
+            member_id=member_id,
+            year=year,
+            month=month,
+            day=day,
+            meal_type=meal_type,
+            taken=taken
+        )
+        return jsonify({"ok": True, "taken": new_taken})
+    except ValueError as val_err:
+        return jsonify({"ok": False, "error": str(val_err)}), 400
     except Exception:
-        db.session.rollback()
         return jsonify({"ok": False, "error": "Save failed. Please try again."}), 500
-
-    return jsonify({"ok": True, "taken": taken})

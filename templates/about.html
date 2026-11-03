@@ -1,34 +1,44 @@
 {% extends "base.html" %}
-{% block title %}About & Contact Creator - MessMate{% endblock %}
+{% block title %}About & Creator - MessMate{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-sm-9 col-md-6 col-lg-5">
-    <div class="card shadow-sm mt-2">
-      <div class="card-body p-4 text-center">
-        <img src="{{ url_for('static', filename='img/creator.jpg') }}"
-             alt="Faisal Ahmed Khan"
-             class="rounded-circle mb-3"
-             style="width: 130px; height: 130px; object-fit: cover; border: 3px solid #0d6efd;">
+<div class="row justify-content-center my-3">
+  <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-4 p-md-5 text-center">
+        <!-- Creator Avatar Preserved -->
+        <div class="position-relative d-inline-block mb-3">
+          <img src="{{ url_for('static', filename='creator.jpg') }}"
+               alt="Faisal Ahmed Khan"
+               class="rounded-circle shadow-sm"
+               style="width: 140px; height: 140px; object-fit: cover; border: 4px solid #38bdf8;">
+          <span class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-code-slash fs-6"></i>
+          </span>
+        </div>
 
-        <h5 class="mb-0 fw-bold">Faisal Ahmed Khan</h5>
-        <p class="text-muted mb-3">EEE, HSTU (25)</p>
+        <h4 class="mb-1 fw-bold text-slate-900">Faisal Ahmed Khan</h4>
+        <p class="text-primary fw-semibold mb-3">Department of EEE, HSTU (25)</p>
 
-        <p class="mb-4">
-          MessMate is a digital mess management system designed to make daily
-          meal tracking, bazar management and monthly settlement simple,
-          transparent and hassle-free.
+        <p class="text-muted mb-4 lead fs-6">
+          MessMate is an intelligent, transparent digital mess management system designed to make daily
+          meal tracking, bazar accounting, and monthly settlement simple, accurate, and completely hassle-free.
         </p>
 
         <div class="d-grid gap-2 mb-4">
-          <a class="btn btn-outline-primary" href="tel:01923816858">📞 01923816858</a>
-          <a class="btn btn-outline-primary" href="mailto:faisalaks321@gmail.com">✉️ faisalaks321@gmail.com</a>
-          <a class="btn btn-outline-primary" href="https://www.facebook.com/share/19VTRi4NqG/"
-             target="_blank" rel="noopener noreferrer">
-            <i class="bi bi-facebook"></i> Facebook Profile
+          <a class="btn btn-outline-primary" href="tel:01923816858">
+            <i class="bi bi-telephone-fill me-2"></i>01923816858
+          </a>
+          <a class="btn btn-outline-primary" href="mailto:faisalaks321@gmail.com">
+            <i class="bi bi-envelope-fill me-2"></i>faisalaks321@gmail.com
+          </a>
+          <a class="btn btn-outline-primary" href="https://www.facebook.com/share/19VTRi4NqG/" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-facebook me-2"></i>Facebook Profile
           </a>
         </div>
 
-        <p class="text-muted small mb-0">Created &amp; Developed by Faisal Ahmed Khan</p>
+        <div class="pt-3 border-top text-muted small">
+          Created &amp; Developed by <strong>Faisal Ahmed Khan</strong> · MessMate v2.0
+        </div>
       </div>
     </div>
   </div>

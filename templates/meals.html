@@ -1,40 +1,88 @@
 {% extends "base.html" %}
-{% block title %}Meals - MessMate{% endblock %}
+{% block title %}Meals - Daily Meal Entry - MessMate{% endblock %}
 {% block content %}
-<h4 class="mb-2">Meals</h4>
-{% include "_month_selector.html" %}
+<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+  <div>
+    <h3 class="mb-0 fw-bold">Meals</h3>
+    <p class="text-muted small mb-0">Record and track daily breakfast, lunch, and dinner per member</p>
+  </div>
+  <div>
+    {% include "_month_selector.html" %}
+  </div>
+</div>
 
-<div id="saveStatus" class="mb-2 small text-muted">Tap a day to enter meals for that member.</div>
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <!-- Live Auto-Save Status Banner -->
+  <div id="saveStatus" class="alert alert-info py-2 px-3 mb-0 fs-6 shadow-sm border-0 d-inline-flex align-items-center gap-2">
+    <i class="bi bi-hand-index-thumb"></i>
+    <span>Tap a meal to toggle state. Changes save automatically.</span>
+  </div>
+
+  <!-- Quick Filter for Large Messes (35+ members) -->
+  {% if members|length > 6 %}
+  <div class="w-auto ms-auto">
+    <div class="input-group input-group-sm">
+      <span class="input-group-text bg-white text-muted"><i class="bi bi-funnel"></i></span>
+      <input type="text" id="memberFilterInput" class="form-control" placeholder="Quick find member...">
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% if today_day %}
+<div class="mb-3 d-flex align-items-center gap-2">
+  <span class="badge badge-sky"><i class="bi bi-clock"></i> Current Day: {{ today_day }}</span>
+  <span class="text-muted small">Select a member below to record meals.</span>
+</div>
+{% endif %}
 
 <div class="accordion" id="mealsAccordion">
 {% for member in members %}
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button"
-              data-bs-toggle="collapse" data-bs-target="#member{{ member.id }}">
-        {{ member.name }}
+  <div class="accordion-item mb-2 border rounded-3 filterable-member" data-member-name="{{ member.name }}">
+    <h2 class="accordion-header" id="heading{{ member.id }}">
+      <button class="accordion-button rounded-3 {% if not loop.first %}collapsed{% endif %}" type="button"
+              data-bs-toggle="collapse" data-bs-target="#member{{ member.id }}"
+              aria-expanded="{{ 'true' if loop.first else 'false' }}" aria-controls="member{{ member.id }}">
+        <div class="d-flex align-items-center justify-content-between w-100 me-3">
+          <span class="fw-bold text-slate-800"><i class="bi bi-person-fill text-primary me-2"></i>{{ member.name }}</span>
+          <span class="badge bg-light text-muted border d-none d-sm-inline">Member #{{ member.id }}</span>
+        </div>
       </button>
     </h2>
     <div id="member{{ member.id }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}"
-         data-bs-parent="#mealsAccordion">
-      <div class="accordion-body p-2">
+         data-bs-parent="#mealsAccordion" aria-labelledby="heading{{ member.id }}">
+      <div class="accordion-body p-2 p-md-3">
         <div class="table-responsive">
-          <table class="table table-sm table-bordered text-center align-middle meal-table">
+          <table class="table table-sm table-bordered text-center align-middle meal-table mb-0">
             <thead>
-              <tr><th>Day</th><th>B</th><th>L</th><th>D</th></tr>
+              <tr>
+                <th style="width: 25%;">Day</th>
+                <th style="width: 25%;">Breakfast (B)</th>
+                <th style="width: 25%;">Lunch (L)</th>
+                <th style="width: 25%;">Dinner (D)</th>
+              </tr>
             </thead>
             <tbody>
             {% for day in days %}
-              <tr>
-                <td class="fw-bold">{{ day }}</td>
+              <tr {% if today_day and day == today_day %}class="table-primary"{% endif %}>
+                <td class="fw-bold text-slate-700">
+                  Day {{ day }}
+                  {% if today_day and day == today_day %}
+                    <span class="badge bg-primary ms-1 d-none d-sm-inline">Today</span>
+                  {% endif %}
+                </td>
                 {% for mt in meal_types %}
                 {% set taken = meal_map.get(member.id, {}).get(day, {}).get(mt, False) %}
                 <td>
                   <button type="button"
                     class="btn btn-lg meal-toggle {{ 'btn-success' if taken else 'btn-outline-secondary' }}"
-                    data-member="{{ member.id }}" data-year="{{ year }}" data-month="{{ month }}"
-                    data-day="{{ day }}" data-type="{{ mt }}"
-                    data-taken="{{ 'true' if taken else 'false' }}">
+                    data-member="{{ member.id }}"
+                    data-year="{{ year }}"
+                    data-month="{{ month }}"
+                    data-day="{{ day }}"
+                    data-type="{{ mt }}"
+                    data-taken="{{ 'true' if taken else 'false' }}"
+                    aria-label="{{ mt|capitalize }} on day {{ day }} for {{ member.name }}">
                     {{ '✓' if taken else '✗' }}
                   </button>
                 </td>
@@ -48,30 +96,45 @@
     </div>
   </div>
 {% else %}
-  <p class="text-muted">No active members yet. Add members first.</p>
+  <div class="card p-4 text-center">
+    <div class="text-muted mb-3"><i class="bi bi-people display-4"></i></div>
+    <h5 class="fw-bold">No Active Members Found</h5>
+    <p class="text-muted mb-3">Add mess members first before recording meal attendance.</p>
+    <div>
+      <a href="{{ url_for('members.index') }}" class="btn btn-primary">+ Add Members</a>
+    </div>
+  </div>
 {% endfor %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
 document.querySelectorAll('.meal-toggle').forEach(btn => {
   btn.addEventListener('click', function () {
     const status = document.getElementById('saveStatus');
     const wasTaken = this.dataset.taken === 'true';
     const newTaken = !wasTaken;
 
-    // optimistic UI update
+    // Optimistic instant visual feedback
     this.dataset.taken = newTaken ? 'true' : 'false';
     this.textContent = newTaken ? '✓' : '✗';
     this.classList.toggle('btn-success', newTaken);
     this.classList.toggle('btn-outline-secondary', !newTaken);
-    status.textContent = 'Saving...';
-    status.className = 'mb-2 small text-warning';
+
+    if (status) {
+      status.innerHTML = '<i class="bi bi-hourglass-split"></i><span>Saving...</span>';
+      status.className = 'alert alert-warning py-2 px-3 mb-0 fs-6 shadow-sm border-0 d-inline-flex align-items-center gap-2';
+    }
 
     fetch("{{ url_for('meals.toggle') }}", {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
       body: JSON.stringify({
         member_id: this.dataset.member,
         year: this.dataset.year,
@@ -79,22 +142,30 @@ document.querySelectorAll('.meal-toggle').forEach(btn => {
         day: this.dataset.day,
         meal_type: this.dataset.type,
         taken: newTaken,
+        csrf_token: csrfToken
       })
-    }).then(r => r.json()).then(data => {
+    })
+    .then(r => r.json())
+    .then(data => {
       if (data.ok) {
-        status.textContent = 'Saved ✓';
-        status.className = 'mb-2 small text-success';
+        if (status) {
+          status.innerHTML = '<i class="bi bi-check2-circle"></i><span>Saved ✓</span>';
+          status.className = 'alert alert-success py-2 px-3 mb-0 fs-6 shadow-sm border-0 d-inline-flex align-items-center gap-2';
+        }
       } else {
         throw new Error(data.error || 'Save failed');
       }
-    }).catch(() => {
-      // revert on failure
+    })
+    .catch(err => {
+      // Revert optimistic state on failure
       this.dataset.taken = wasTaken ? 'true' : 'false';
       this.textContent = wasTaken ? '✓' : '✗';
       this.classList.toggle('btn-success', wasTaken);
       this.classList.toggle('btn-outline-secondary', !wasTaken);
-      status.textContent = 'Save failed. Please try again.';
-      status.className = 'mb-2 small text-danger';
+      if (status) {
+        status.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i><span>Save failed. Please check connection.</span>';
+        status.className = 'alert alert-danger py-2 px-3 mb-0 fs-6 shadow-sm border-0 d-inline-flex align-items-center gap-2';
+      }
     });
   });
 });

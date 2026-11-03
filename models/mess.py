@@ -9,6 +9,7 @@ class Mess(db.Model):
     name = db.Column(db.String(150), nullable=False)
     manager_name = db.Column(db.String(150), nullable=False)
     target_meal_rate = db.Column(db.Float, nullable=True)
+    status = db.Column(db.String(20), default="Active", nullable=False)  # Active / Suspended
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     users = db.relationship("User", backref="mess", cascade="all, delete-orphan")

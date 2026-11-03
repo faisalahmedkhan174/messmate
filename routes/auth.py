@@ -73,12 +73,23 @@ def login():
             flash("Invalid mess name, username, or password.", "danger")
             return render_template("login.html", form=request.form)
 
+        # Check if mess is suspended (Creators can still login to inspect)
+        if getattr(mess, "status", "Active") == "Suspended" and not user.is_creator:
+            flash("This mess has been suspended by the administrator. Please contact support.", "danger")
+            return render_template("login.html", form=request.form)
+
         session.clear()
         session["mess_id"] = mess.id
         session["user_id"] = user.id
         session["manager_name"] = user.manager_name
         session["mess_name"] = mess.name
-        flash("Welcome back, {}!".format(user.manager_name), "success")
+        session["role"] = user.role
+        session["is_creator"] = user.is_creator
+
+        if user.is_creator:
+            flash("Welcome back, Creator {}!".format(user.manager_name), "success")
+        else:
+            flash("Welcome back, {}!".format(user.manager_name), "success")
         return redirect(url_for("dashboard.index"))
 
     return render_template("login.html", form={})

@@ -1,9 +1,7 @@
 import json
 import random
 from datetime import date, timedelta
-
-from flask import (Blueprint, render_template, request, redirect, url_for,
-                    flash, session, jsonify)
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, abort
 
 from models import db
 from models.user import User
@@ -11,7 +9,7 @@ from models.member import Member
 from models.meal import Meal
 from models.bazar import Bazar
 from models.deposit import Deposit
-from .helpers import login_required, current_mess
+from utils.security import login_required, current_mess
 
 bp = Blueprint("settings", __name__)
 
@@ -38,8 +36,11 @@ def update_profile():
         flash("Mess name, manager name, and username cannot be empty.", "danger")
         return redirect(url_for("settings.index"))
 
-    existing = User.query.filter(User.mess_id == mess.id, User.username == username,
-                                  User.id != user.id).first()
+    existing = User.query.filter(
+        User.mess_id == mess.id,
+        User.username == username,
+        User.id != user.id
+    ).first()
     if existing:
         flash("That username is already in use for this mess.", "danger")
         return redirect(url_for("settings.index"))
@@ -53,7 +54,7 @@ def update_profile():
     session["manager_name"] = manager_name
     session["mess_name"] = mess_name
 
-    flash("Profile settings updated.", "success")
+    flash("Profile settings updated successfully.", "success")
     return redirect(url_for("settings.index"))
 
 
@@ -102,7 +103,7 @@ def update_target():
             return redirect(url_for("settings.index"))
 
     db.session.commit()
-    flash("Target meal rate updated.", "success")
+    flash("Target meal rate updated successfully.", "success")
     return redirect(url_for("settings.index"))
 
 
@@ -115,38 +116,60 @@ def load_demo_data():
 
     demo_names = ["Rahim", "Karim", "Hasan", "Jamal", "Sabbir", "Nayeem"]
     members = []
-    for i, name in enumerate(demo_names):
+    for name in demo_names:
         existing = Member.query.filter_by(mess_id=mess.id, name=name).first()
         if existing:
             members.append(existing)
             continue
-        m = Member(mess_id=mess.id, name=name, phone=None,
-                   joining_date=date(year, month, 1), status="Active")
+        m = Member(
+            mess_id=mess.id,
+            name=name,
+            phone=None,
+            joining_date=date(year, month, 1),
+            status="Active"
+        )
         db.session.add(m)
         members.append(m)
     db.session.flush()
 
     day_count = min(10, (today.day if today.month == month and today.year == year else 28))
     meal_types = ["breakfast", "lunch", "dinner"]
+    categories = ["Groceries", "Fish/Meat", "Vegetables", "Spices", "Other"]
 
     for day_num in range(1, day_count + 1):
         d = date(year, month, day_num)
         for m in members:
             for mt in meal_types:
-                if Meal.query.filter_by(mess_id=mess.id, member_id=m.id, date=d,
-                                         meal_type=mt).first():
+                if Meal.query.filter_by(mess_id=mess.id, member_id=m.id, date=d, meal_type=mt).first():
                     continue
                 taken = random.random() > 0.15
-                db.session.add(Meal(mess_id=mess.id, member_id=m.id, date=d,
-                                     meal_type=mt, taken=taken))
+                db.session.add(Meal(
+                    mess_id=mess.id,
+                    member_id=m.id,
+                    date=d,
+                    meal_type=mt,
+                    taken=taken
+                ))
         bazar_member = random.choice(members)
-        db.session.add(Bazar(mess_id=mess.id, member_id=bazar_member.id, date=d,
-                              amount=round(random.uniform(700, 2000), 2),
-                              items_description="Demo groceries"))
+        db.session.add(Bazar(
+            mess_id=mess.id,
+            member_id=bazar_member.id,
+            date=d,
+            amount=round(random.uniform(700, 2000), 2),
+            items_description="Demo groceries",
+            category=random.choice(categories),
+        ))
 
     for m in members:
-        db.session.add(Deposit(mess_id=mess.id, member_id=m.id,
-                                date=date(year, month, 1), amount=3000, note="Demo deposit"))
+        if not Deposit.query.filter_by(mess_id=mess.id, member_id=m.id, date=date(year, month, 1)).first():
+            db.session.add(Deposit(
+                mess_id=mess.id,
+                member_id=m.id,
+                date=date(year, month, 1),
+                amount=3000,
+                payment_method="Cash",
+                note="Demo deposit"
+            ))
 
     if mess.target_meal_rate is None:
         mess.target_meal_rate = 55.0
@@ -166,18 +189,50 @@ def backup_json():
     deposits = Deposit.query.filter_by(mess_id=mess.id).all()
 
     data = {
-        "mess": {"name": mess.name, "manager_name": mess.manager_name,
-                 "target_meal_rate": mess.target_meal_rate},
-        "members": [{"id": m.id, "name": m.name, "phone": m.phone,
-                     "joining_date": m.joining_date.isoformat(), "status": m.status}
-                    for m in members],
-        "meals": [{"member_id": m.member_id, "date": m.date.isoformat(),
-                   "meal_type": m.meal_type, "taken": m.taken} for m in meals],
-        "bazar": [{"member_id": b.member_id, "date": b.date.isoformat(),
-                   "amount": b.amount, "items_description": b.items_description}
-                  for b in bazars],
-        "deposits": [{"member_id": d.member_id, "date": d.date.isoformat(),
-                      "amount": d.amount, "note": d.note} for d in deposits],
+        "mess": {
+            "name": mess.name,
+            "manager_name": mess.manager_name,
+            "target_meal_rate": mess.target_meal_rate,
+        },
+        "members": [
+            {
+                "id": m.id,
+                "name": m.name,
+                "phone": m.phone,
+                "joining_date": m.joining_date.isoformat() if m.joining_date else None,
+                "status": m.status,
+            }
+            for m in members
+        ],
+        "meals": [
+            {
+                "member_id": m.member_id,
+                "date": m.date.isoformat(),
+                "meal_type": m.meal_type,
+                "taken": m.taken,
+            }
+            for m in meals
+        ],
+        "bazar": [
+            {
+                "member_id": b.member_id,
+                "date": b.date.isoformat(),
+                "amount": b.amount,
+                "category": getattr(b, "category", "Groceries") or "Groceries",
+                "items_description": b.items_description,
+            }
+            for b in bazars
+        ],
+        "deposits": [
+            {
+                "member_id": d.member_id,
+                "date": d.date.isoformat(),
+                "amount": d.amount,
+                "payment_method": getattr(d, "payment_method", "Cash") or "Cash",
+                "note": d.note,
+            }
+            for d in deposits
+        ],
     }
 
     response = jsonify(data)

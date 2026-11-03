@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found - MessMate{% endblock %}
+{% block content %}
+<div class="row justify-content-center my-5">
+  <div class="col-12 col-md-6 text-center">
+    <div class="card p-4 shadow-sm border-0">
+      <div class="display-1 text-primary fw-bold mb-3">404</div>
+      <h3 class="fw-bold mb-2">Page Not Found</h3>
+      <p class="text-muted mb-4">The page or resource you are looking for does not exist or has been moved.</p>
+      <div>
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary px-4">Return to Dashboard</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

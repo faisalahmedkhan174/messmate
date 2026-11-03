@@ -1,45 +1,120 @@
 {% extends "base.html" %}
-{% block title %}{{ member.name }} - MessMate{% endblock %}
+{% block title %}{{ member.name }} - Member Details - MessMate{% endblock %}
 {% block content %}
-<h4 class="mb-2">{{ member.name }} <small class="text-muted">#{{ member.id }}</small></h4>
-{% include "_month_selector.html" %}
-
-<div class="row g-3 mb-3">
-  <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body">
-    <div class="text-muted small">Breakfast</div><div class="fs-5 fw-bold">{{ total_breakfast }}</div></div></div></div>
-  <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body">
-    <div class="text-muted small">Lunch</div><div class="fs-5 fw-bold">{{ total_lunch }}</div></div></div></div>
-  <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body">
-    <div class="text-muted small">Dinner</div><div class="fs-5 fw-bold">{{ total_dinner }}</div></div></div></div>
-  <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body">
-    <div class="text-muted small">Total Meals</div><div class="fs-5 fw-bold">{{ total_meals }}</div></div></div></div>
-  <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body">
-    <div class="text-muted small">Total Deposits</div><div class="fs-5 fw-bold">৳{{ total_deposits }}</div></div></div></div>
-  <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body">
-    <div class="text-muted small">Meal Cost</div><div class="fs-5 fw-bold">৳{{ meal_cost }}</div></div></div></div>
-  <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body">
-    <div class="text-muted small">Balance</div>
-    <div class="fs-5 fw-bold {{ 'text-success' if balance > 0 else ('text-danger' if balance < 0 else '') }}">
-      {% if balance > 0 %}🟢 Refund ৳{{ balance }}{% elif balance < 0 %}🔴 Due ৳{{ -balance }}{% else %}✓ Settled{% endif %}
-    </div></div></div></div>
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ url_for('members.index') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+      <h3 class="mb-0 fw-bold">{{ member.name }}</h3>
+      <span class="badge {{ 'badge-success' if member.status=='Active' else 'badge-secondary' }}">{{ member.status }}</span>
+    </div>
+    <p class="text-muted small mb-0 ms-4 ps-2">Member #{{ member.id }} · Joined: {{ member.joining_date }} {% if member.phone %}· 📞 {{ member.phone }}{% endif %}</p>
+  </div>
+  <div>
+    {% include "_month_selector.html" %}
+  </div>
 </div>
 
-<div class="card mb-3">
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="stat-label">Breakfast</div>
+      <div class="stat-value">{{ total_breakfast }}</div>
+      <div class="stat-sub text-muted">Morning meals</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="stat-label">Lunch</div>
+      <div class="stat-value">{{ total_lunch }}</div>
+      <div class="stat-sub text-muted">Midday meals</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="stat-label">Dinner</div>
+      <div class="stat-value">{{ total_dinner }}</div>
+      <div class="stat-sub text-muted">Night meals</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card primary h-100">
+      <div class="stat-label">Total Meals</div>
+      <div class="stat-value text-primary">{{ total_meals }}</div>
+      <div class="stat-sub text-muted">Sum of B + L + D</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="stat-label">Total Deposits</div>
+      <div class="stat-value">{{ (total_deposits)|bdt }}</div>
+      <div class="stat-sub text-muted">Paid by member</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card h-100">
+      <div class="stat-label">Meal Cost</div>
+      <div class="stat-value">{{ (meal_cost)|bdt }}</div>
+      <div class="stat-sub text-muted">Meals × Final Rate</div>
+    </div>
+  </div>
+  <div class="col-12 col-md-6">
+    <div class="stat-card {{ 'success' if balance > 0 else ('danger' if balance < 0 else 'primary') }} h-100">
+      <div class="stat-label">Net Balance</div>
+      <div class="stat-value {{ 'text-success' if balance > 0 else ('text-danger' if balance < 0 else '') }}">
+        {% if balance > 0 %}
+          🟢 Refund {{ (balance)|bdt }}
+        {% elif balance < 0 %}
+          🔴 Due {{ (-balance)|bdt }}
+        {% else %}
+          ✓ Settled (৳0.00)
+        {% endif %}
+      </div>
+      <div class="stat-sub text-muted">
+        {% if balance > 0 %}The mess owes this member money.
+        {% elif balance < 0 %}Member owes this amount to the mess.
+        {% else %}Account is completely balanced.
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Daily Meals Breakdown -->
+<div class="card mb-4">
   <div class="card-body">
-    <h6 class="card-title">Daily Meal History</h6>
+    <h5 class="card-title"><i class="bi bi-calendar-check me-2 text-primary"></i>Daily Meal History</h5>
     <div class="table-responsive">
-      <table class="table table-sm table-striped">
-        <thead><tr><th>Date</th><th>Breakfast</th><th>Lunch</th><th>Dinner</th></tr></thead>
+      <table class="table table-hover align-middle mobile-cards">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Breakfast</th>
+            <th>Lunch</th>
+            <th>Dinner</th>
+            <th>Daily Total</th>
+          </tr>
+        </thead>
         <tbody>
         {% for row in daily_meal_history %}
+          {% set day_sum = (1 if row.breakfast else 0) + (1 if row.lunch else 0) + (1 if row.dinner else 0) %}
           <tr>
-            <td>{{ row.date }}</td>
-            <td>{{ '✓' if row.breakfast else '✗' }}</td>
-            <td>{{ '✓' if row.lunch else '✗' }}</td>
-            <td>{{ '✓' if row.dinner else '✗' }}</td>
+            <td data-label="Date" class="fw-semibold">{{ row.date }}</td>
+            <td data-label="Breakfast">
+              {% if row.breakfast %}<span class="badge badge-success">✓ Taken</span>{% else %}<span class="text-muted">✗</span>{% endif %}
+            </td>
+            <td data-label="Lunch">
+              {% if row.lunch %}<span class="badge badge-success">✓ Taken</span>{% else %}<span class="text-muted">✗</span>{% endif %}
+            </td>
+            <td data-label="Dinner">
+              {% if row.dinner %}<span class="badge badge-success">✓ Taken</span>{% else %}<span class="text-muted">✗</span>{% endif %}
+            </td>
+            <td data-label="Daily Total" class="fw-bold">{{ day_sum }}</td>
           </tr>
         {% else %}
-          <tr><td colspan="4" class="text-center text-muted">No meal records yet.</td></tr>
+          <tr><td colspan="5" class="text-center text-muted py-3">No meal records found for this month.</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -47,36 +122,59 @@
   </div>
 </div>
 
-<div class="row">
+<div class="row g-3">
+  <!-- Deposit History -->
   <div class="col-md-6 mb-3">
-    <div class="card h-100"><div class="card-body">
-      <h6 class="card-title">Deposit History</h6>
-      <table class="table table-sm">
-        <thead><tr><th>Date</th><th>Amount</th><th>Note</th></tr></thead>
-        <tbody>
-        {% for d in deposits %}
-          <tr><td>{{ d.date }}</td><td>৳{{ d.amount }}</td><td>{{ d.note or '-' }}</td></tr>
-        {% else %}
-          <tr><td colspan="3" class="text-center text-muted">No deposits.</td></tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    </div></div>
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-cash-stack me-2 text-primary"></i>Deposits Recorded</h5>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle">
+            <thead>
+              <tr><th>Date</th><th>Amount</th><th>Method / Note</th></tr>
+            </thead>
+            <tbody>
+            {% for d in deposits %}
+              <tr>
+                <td>{{ d.date }}</td>
+                <td class="fw-bold text-success">{{ (d.amount)|bdt }}</td>
+                <td class="small text-muted">{{ d.note or d.payment_method or '-' }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="3" class="text-center text-muted py-3">No deposits for this month.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- Bazar Performed -->
   <div class="col-md-6 mb-3">
-    <div class="card h-100"><div class="card-body">
-      <h6 class="card-title">Bazar Performed</h6>
-      <table class="table table-sm">
-        <thead><tr><th>Date</th><th>Amount</th><th>Items</th></tr></thead>
-        <tbody>
-        {% for b in bazars %}
-          <tr><td>{{ b.date }}</td><td>৳{{ b.amount }}</td><td>{{ b.items_description or '-' }}</td></tr>
-        {% else %}
-          <tr><td colspan="3" class="text-center text-muted">No bazar records.</td></tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    </div></div>
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-cart3 me-2 text-primary"></i>Bazar Shopping Done</h5>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle">
+            <thead>
+              <tr><th>Date</th><th>Amount</th><th>Items</th></tr>
+            </thead>
+            <tbody>
+            {% for b in bazars %}
+              <tr>
+                <td>{{ b.date }}</td>
+                <td class="fw-bold text-primary">{{ (b.amount)|bdt }}</td>
+                <td class="small text-muted">{{ b.items_description or '-' }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="3" class="text-center text-muted py-3">No bazar entries performed.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

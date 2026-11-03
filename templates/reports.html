@@ -1,42 +1,105 @@
 {% extends "base.html" %}
-{% block title %}Reports - MessMate{% endblock %}
+{% block title %}Reports - Monthly & Yearly Statements - MessMate{% endblock %}
 {% block content %}
-<h4 class="mb-2">Reports</h4>
-{% include "_month_selector.html" %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div>
+    <h3 class="mb-0 fw-bold">Reports &amp; Analytics</h3>
+    <p class="text-muted small mb-0">Monthly audits, member breakdown, yearly expense comparisons, and exports</p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <button class="btn btn-outline-secondary btn-sm no-print" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i>Print Report
+    </button>
+    {% include "_month_selector.html" %}
+  </div>
+</div>
 
-<div class="card mb-3">
+<!-- Monthly Summary Card -->
+<div class="card mb-4">
   <div class="card-body">
-    <h6 class="card-title">Monthly Report</h6>
-    <ul class="list-unstyled mb-3">
-      <li>Total Members: <strong>{{ total_members }}</strong></li>
-      <li>Total Meals: <strong>{{ totals.total_meals }}</strong></li>
-      <li>Total বাজার: <strong>৳{{ totals.total_bazar }}</strong></li>
-      <li>Total Deposits: <strong>৳{{ totals.total_deposits }}</strong></li>
-      <li>Final Meal Rate: <strong>৳{{ totals.final_rate }}</strong></li>
-    </ul>
-    <div class="d-flex flex-wrap gap-2">
-      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('reports.export_settlement_csv', year=year, month=month) }}">Export Settlement CSV</a>
-      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('reports.export_members_csv') }}">Export Members CSV</a>
-      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('reports.export_bazar_csv', year=year, month=month) }}">Export Bazar CSV</a>
+    <h5 class="card-title mb-3"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Monthly Overview Statement</h5>
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-md-3">
+        <div class="p-3 bg-light rounded-3">
+          <span class="text-muted small d-block">Total Members</span>
+          <span class="fs-4 fw-bold text-slate-800">{{ total_members }}</span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="p-3 bg-light rounded-3">
+          <span class="text-muted small d-block">Total Meals Taken</span>
+          <span class="fs-4 fw-bold text-slate-800">{{ totals.total_meals }}</span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="p-3 bg-light rounded-3">
+          <span class="text-muted small d-block">Total Bazar Spend</span>
+          <span class="fs-4 fw-bold text-slate-800">{{ (totals.total_bazar)|bdt }}</span>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="p-3 bg-light rounded-3">
+          <span class="text-muted small d-block">Final Meal Rate</span>
+          <span class="fs-4 fw-bold text-primary">{{ (totals.final_rate)|bdt }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export Buttons -->
+    <div class="d-flex flex-wrap gap-2 no-print pt-2 border-top">
+      <span class="text-muted small align-self-center me-2"><i class="bi bi-download me-1"></i>Export Data:</span>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('reports.export_settlement_csv', year=year, month=month) }}">
+        <i class="bi bi-filetype-csv me-1"></i>Settlement CSV
+      </a>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('reports.export_members_csv') }}">
+        <i class="bi bi-filetype-csv me-1"></i>Members CSV
+      </a>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('reports.export_bazar_csv', year=year, month=month) }}">
+        <i class="bi bi-filetype-csv me-1"></i>Bazar CSV
+      </a>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('reports.export_deposits_csv', year=year, month=month) }}">
+        <i class="bi bi-filetype-csv me-1"></i>Deposits CSV
+      </a>
     </div>
   </div>
 </div>
 
-<div class="card mb-3">
+<!-- Member-wise Statement -->
+<div class="card mb-4">
   <div class="card-body">
-    <h6 class="card-title">Member-wise Settlement</h6>
+    <h5 class="card-title mb-3"><i class="bi bi-people me-2 text-primary"></i>Member-wise Settlement Statement</h5>
     <div class="table-responsive">
-      <table class="table table-sm table-striped">
-        <thead><tr><th>Member</th><th>Meals</th><th>Meal Cost</th><th>Deposit</th><th>Balance</th></tr></thead>
+      <table class="table table-hover align-middle mobile-cards">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Meals</th>
+            <th>Meal Cost</th>
+            <th>Deposit</th>
+            <th>Net Balance</th>
+            <th>Status</th>
+          </tr>
+        </thead>
         <tbody>
         {% for row in settlement %}
           <tr>
-            <td>{{ row.member.name }}</td>
-            <td>{{ row.total_meals }}</td>
-            <td>৳{{ row.meal_cost }}</td>
-            <td>৳{{ row.total_deposit }}</td>
-            <td>৳{{ row.balance }}</td>
+            <td data-label="Member" class="fw-bold">{{ row.member.name }}</td>
+            <td data-label="Meals">{{ row.total_meals }}</td>
+            <td data-label="Meal Cost">{{ (row.meal_cost)|bdt }}</td>
+            <td data-label="Deposit">{{ (row.total_deposit)|bdt }}</td>
+            <td data-label="Balance" class="fw-bold">{{ (row.balance)|bdt }}</td>
+            <td data-label="Status">
+              {% if row.status == 'refund' %}
+                <span class="badge badge-refund">Refund</span>
+              {% elif row.status == 'due' %}
+                <span class="badge badge-due">Due</span>
+              {% else %}
+                <span class="badge badge-settled">Settled</span>
+              {% endif %}
+            </td>
           </tr>
+        {% else %}
+          <tr><td colspan="6" class="text-center text-muted py-3">No members found.</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -44,28 +107,42 @@
   </div>
 </div>
 
-<div class="card mb-3">
+<!-- Yearly Comparison -->
+<div class="card mb-4">
   <div class="card-body">
-    <h6 class="card-title">Yearly Report ({{ year }})</h6>
-    <div class="table-responsive">
-      <table class="table table-sm table-striped">
-        <thead><tr><th>Month</th><th>Total Meals</th><th>Total বাজার</th><th>Final Meal Rate</th></tr></thead>
+    <h5 class="card-title mb-3"><i class="bi bi-calendar4-range me-2 text-primary"></i>Yearly Overview ({{ year }})</h5>
+    <div class="table-responsive mb-3">
+      <table class="table table-hover align-middle mobile-cards">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Total Meals</th>
+            <th>Total Bazar</th>
+            <th>Total Deposits</th>
+            <th>Final Meal Rate</th>
+          </tr>
+        </thead>
         <tbody>
         {% set month_names = ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
         {% for row in yearly_rows %}
           <tr>
-            <td>{{ month_names[row.month-1] }}</td>
-            <td>{{ row.total_meals }}</td>
-            <td>৳{{ row.total_bazar }}</td>
-            <td>৳{{ row.final_rate }}</td>
+            <td data-label="Month" class="fw-bold">{{ month_names[row.month-1] }}</td>
+            <td data-label="Total Meals">{{ row.total_meals }}</td>
+            <td data-label="Total Bazar">{{ (row.total_bazar)|bdt }}</td>
+            <td data-label="Total Deposits">{{ (row.total_deposits)|bdt }}</td>
+            <td data-label="Final Meal Rate" class="fw-bold text-primary">{{ (row.final_rate)|bdt }}</td>
           </tr>
         {% else %}
-          <tr><td colspan="4" class="text-center text-muted">No data yet this year.</td></tr>
+          <tr><td colspan="5" class="text-center text-muted py-3">No recorded activity for {{ year }} yet.</td></tr>
         {% endfor %}
         </tbody>
       </table>
     </div>
-    <canvas id="yearlyChart" height="100"></canvas>
+
+    <!-- Yearly Trend Chart -->
+    <div class="chart-wrap">
+      <canvas id="yearlyChart"></canvas>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -74,20 +151,53 @@
 <script>
 const monthNames = {{ ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']|tojson }};
 const yearlyRows = {{ yearly_rows|tojson }};
-new Chart(document.getElementById('yearlyChart'), {
-  type: 'line',
-  data: {
-    labels: yearlyRows.map(r => monthNames[r.month - 1]),
-    datasets: [{
-      label: 'Final Meal Rate (৳)',
-      data: yearlyRows.map(r => r.final_rate),
-      borderColor: '#198754',
-      backgroundColor: 'rgba(25,135,84,0.15)',
-      tension: 0.25,
-      fill: true,
-    }]
-  },
-  options: { responsive: true, plugins: { legend: { display: false } } }
-});
+const chartEl = document.getElementById('yearlyChart');
+
+if (chartEl && yearlyRows.length > 0) {
+  new Chart(chartEl, {
+    type: 'line',
+    data: {
+      labels: yearlyRows.map(r => monthNames[r.month - 1]),
+      datasets: [{
+        label: 'Final Meal Rate (৳)',
+        data: yearlyRows.map(r => r.final_rate),
+        borderColor: '#0284c7',
+        backgroundColor: 'rgba(14, 165, 233, 0.12)',
+        tension: 0.3,
+        borderWidth: 2.5,
+        pointBackgroundColor: '#0284c7',
+        pointRadius: 4,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a',
+          cornerRadius: 8,
+          callbacks: {
+            label: function(context) { return 'Final Rate: ৳' + Number(context.raw).toFixed(2); }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'Inter', size: 11 } }
+        },
+        y: {
+          grid: { color: '#f1f5f9' },
+          ticks: {
+            font: { family: 'Inter', size: 11 },
+            callback: function(v) { return '৳' + v; }
+          }
+        }
+      }
+    }
+  });
+}
 </script>
 {% endblock %}

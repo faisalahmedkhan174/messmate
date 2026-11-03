@@ -1,4 +1,30 @@
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
-instance/*.db
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
 .venv/
+env/
+ENV/
+
+# SQLite databases & backups
+instance/*.db
+instance/*.db.backup*
+tests/*.db
+tests/*.db.backup*
+*.db
+*.db.backup*
+
+# Environment & local secrets
+.env
+.env.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE & Editor folders
+.idea/
+.vscode/
